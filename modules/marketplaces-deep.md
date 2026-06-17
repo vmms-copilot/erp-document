@@ -1,3 +1,56 @@
+
+
+---
+
+## Order-sync sequence (Mermaid)
+
+How a marketplace order flows from the channel into Nhanh and back, reconstructed from the Shopee order page (Tải đơn + sync-state/lifecycle tabs) and the channel sync flags.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant MP as Marketplace (Shopee/Lazada/TikTok)
+    participant SY as Nhanh Sync Service
+    participant OR as Order service
+    participant IN as Inventory
+    participant FN as Finance / Reconciliation
+    participant OP as Operator (CH tương)
+
+    Note over MP,SY: Webhook OR polling via "Tải đơn"
+    MP->>SY: New order event (channel_order_id, items, buyer, status)
+    SY->>SY: Resolve channel + token (refresh if expired)
+    SY->>OR: Upsert order via channel_order_map
+    Note over OR: sync-state = Đơn sàn → Chưa đồng bộ
+    OR->>IN: Reserve / deduct stock (if stock_sync on)
+    IN-->>OR: Stock updated; push new qty to MP
+    OR->>SY: Push stock back to channel
+    SY->>MP: Update channel stock
+    Note over OR: sync-state = Đã đồng bộ
+    OP->>OR: Confirm → print label → handover (Chờ xác nhận→Chờ lấy hàng→Đang giao)
+    MP-->>SY: Status callbacks (shipped / delivered / returned / cancelled)
+    SY->>OR: Mirror lifecycle status
+    MP-->>FN: Settlement / payout statement
+    FN->>FN: Reconcile (Tiền đối soát /order/verifyandtransfer)
+    FN-->>OR: Mark order reconciled; feed revenue reports
+```
+
+### State mapping
+| Nhanh sync-state | Meaning |
+|---|---|
+| Đơn sàn | raw order seen on the channel, not yet imported |
+| Chưa đồng bộ | imported but product/stock not yet matched |
+| Đã đồng bộ | fully mapped; stock deducted; counts toward reports |
+
+| Lifecycle tab | Channel equivalent |
+|---|---|
+| Chờ xác nhận | awaiting seller confirmation |
+| Chờ lấy hàng | awaiting carrier pickup |
+| Đang giao | in transit |
+| Đã huỷ | cancelled |
+| Trả hàng | return/refund |
+| Xuất kho | stock issued / fulfilled |
+
+Reconciliation closes the loop: marketplace settlement statements are matched in **Tiền đối soát** (/report/order/verifyandtransfer and /accounting/debts/merchant), after which the order's revenue is recognized.
 # Marketplaces / Channels — Per-Marketplace Deep Dive
 
 Detailed documentation of the multi-channel sales integration (Kênh bán → Kết nối sàn) on nhanh.vn, captured live (businessId 137541). Complements channels-deep.md with per-marketplace screenshots and field-level structure.
