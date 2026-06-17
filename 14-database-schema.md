@@ -1,3 +1,96 @@
+
+
+---
+
+## Appendix B — Entity-Relationship Diagram (Mermaid)
+
+The diagram below shows the core relational structure. GitHub renders it inline. Money columns are integer VND; every table is implicitly tenant-scoped by `business_id`.
+
+```mermaid
+erDiagram
+    business ||--o{ depot : has
+    business ||--o{ user : employs
+    business ||--o{ product : owns
+    business ||--o{ customer : owns
+
+    user }o--o{ role : "user_role"
+    user }o--o{ depot : "user_depot"
+    user }o--|| department : "belongs to"
+
+    product ||--o{ product_variant : has
+    product ||--o{ imei : tracks
+    product ||--o{ batch : "lot/expiry"
+    product }o--|| category : "in"
+    product }o--|| brand : "by"
+    product }o--|| unit : "measured in"
+
+    depot ||--o{ inventory : holds
+    product ||--o{ inventory : "stock of"
+    product_variant ||--o{ inventory : "stock of"
+
+    imex_bill ||--o{ imex_bill_item : contains
+    imex_bill }o--|| depot : "moves"
+    imex_bill_item }o--|| product : references
+    transfer ||--o{ transfer_item : contains
+    transfer }o--|| depot : "from/to"
+    stock_check ||--o{ stock_check_item : contains
+    supplier ||--o{ imex_bill : supplies
+
+    customer }o--|| customer_group : "in"
+    customer }o--|| customer_level : "tier"
+    customer ||--o{ care_activity : "CRM log"
+    customer ||--o{ customer_point_log : "loyalty"
+
+    order }o--|| customer : "placed by"
+    order }o--|| depot : "fulfilled from"
+    order }o--|| channel : "via"
+    order }o--|| carrier : "shipped by"
+    order ||--o{ order_item : contains
+    order ||--o{ order_payment : "paid via"
+    order ||--o{ order_status_history : "lifecycle"
+    order ||--o{ complaint : "may raise"
+    order_item }o--|| product : references
+
+    channel ||--o{ channel_listing : publishes
+    channel ||--o{ channel_order_map : imports
+
+    pos_bill }o--|| customer : "for"
+    pos_bill }o--|| depot : "at"
+    pos_bill }o--|| user : "cashier"
+    pos_bill ||--o{ pos_bill_item : contains
+    pos_bill ||--o{ pos_return : "may return"
+    pos_return ||--o{ pos_return_item : contains
+    invoice }o--|| pos_bill : "e-invoice of"
+    invoice }o--|| order : "e-invoice of"
+
+    journal_entry ||--o{ journal_line : "balanced lines"
+    journal_line }o--|| account : posts
+    cash_transaction }o--|| account : affects
+
+    promotion ||--o{ promotion_usage : "applied as"
+    customer ||--o{ promotion_usage : "redeems"
+
+    warranty_case }o--|| customer : "for"
+    warranty_case }o--|| product : "on"
+    warranty_case }o--|| imei : "unit"
+    warranty_case ||--o{ warranty_action : "repair steps"
+
+    business ||--o{ web_content : "CMS"
+```
+
+### Subsystem boundaries
+- **Tenancy/Identity**: business, depot, user, role, department, setting
+- **Catalog**: product, product_variant, category, brand, unit, imei, batch
+- **Inventory**: inventory, imex_bill(+item), transfer(+item), stock_check(+item), supplier
+- **Sales — Orders**: order(+item/payment/status_history), complaint, carrier, channel(+listing/order_map)
+- **Sales — POS**: pos_bill(+item), pos_return(+item), invoice
+- **Customers/CRM**: customer, customer_group, customer_level, care_activity, customer_point_log
+- **Finance**: account, journal_entry(+line), cash_transaction
+- **Marketing**: promotion, promotion_usage, point_rule
+- **Service**: warranty_case, warranty_action
+- **CMS**: web_content, web_media
+
+Reports (modules 13 / reports-deep.md) are read models projected over the transactional tables above and own no canonical state.
 # 14 — Consolidated Database Schema
 
 Proposed relational schema reconstructed from observed entities and business logic across all modules. All tables are tenant-scoped by business_id and use surrogate integer/bigint PKs unless noted. Money columns are integer VND. Timestamps are created_at / updated_at.
