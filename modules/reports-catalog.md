@@ -1,3 +1,39 @@
+
+
+---
+
+## Appendix — Report archetypes (with live structure)
+
+The ~90 reports above reduce to a small number of **UI archetypes**. Documenting the archetype tells you how to rebuild any report in its family.
+
+### A1. Standard tabular report
+The default shell: filter bar + Lọc + Xuất dữ liệu + In báo cáo + column-picker, one flat grid with a Tổng (total) and sometimes Trung bình (average) summary row. Column headers carry [n] formula footnotes. Most revenue/order/product/inventory "theo X" reports use this.
+
+### A2. KPI + chart + commission grid (e.g. /report/revenue/staff)
+- Sub-tabs: **Nhân viên / Phòng ban / Chỉ tiêu** (target-setting).
+- 3 KPI cards: headcount, **Tổng doanh thu**, **Tổng lợi nhuận** (live sample: 3 staff, 62,974,000 revenue, 39,981,529 profit over a 12-month range).
+- "Top 5 nhân viên có doanh thu cao nhất" horizontal bar chart.
+- Grid columns: Đơn bán [3], SP bán [4], Đơn đặt [4A], Đơn trả [5], SP trả [6], Điểm sử dụng [10], Chiết khấu [11], **Doanh thu [14 = 7-8-10-11+13A]**, **Chỉ tiêu [14B]** (target), **Hoàn thành [14]/[14B]** (attainment %), **Hoa hồng [15]** (commission).
+- Implies a `sales_target` entity (per staff/department/period) and a commission rule engine.
+
+### A3. Histogram / segmentation (e.g. /report/order/value)
+- Two side-by-side **pie charts** + two distribution tables: by **price band** (Khoảng giá: <=100k, 100-200k, …, 14.9-15M) and by **item count** (Khoảng SL: =>1, <=2, 1=>3, …).
+- Each row: Tổng hóa đơn + Tỷ lệ %. Live sample: 149 orders; 200k-300k band = 30.2%; single-item orders = 46.98%.
+- Filter "Giá trị tính theo" toggles the measure (Doanh thu vs count).
+
+### A4. Cohort / retention (e.g. /report/customer/total)
+- Month-grained (Tháng range), with a **Báo cáo đã lưu** saved-results tab → async.
+- Four stacked charts each with its own export: Số lượng khách hàng / Số lượng khách tăng theo tháng / Số lượng khách quay lại theo tháng / **Doanh thu theo tỷ lệ khách quay lại**.
+- Filters: Kho hàng / Kiểu bán / Tổng khách.
+
+### A5. Async heavy aggregation (e.g. /report/inventory/index)
+- Lọc → "Đang tạo báo cáo" progress bar → assigns `reportId` URL param → result persisted under **Báo cáo đã lưu**. Paginated (live: 1-50 / 103 products). 4 period-blocks (đầu/nhập/xuất/cuối kỳ) × SL/Giá vốn/Thành tiền. Requires a cost-basis method param.
+
+### A6. Statutory financial statement (e.g. /accounting/report/balancesheet, /businessresult)
+- Fixed line-code layout (Mã số) with a **Mô tả** column showing the ledger-balance derivation per line, and 2-period (Số kỳ này / Số kỳ trước) or measure/% columns. Pure projection over chart-of-accounts + journal_line. Household-book templates (S1a/S2a-d) are statutory variants keyed by revenue tier.
+
+### Rebuild guidance
+Model a report as: `{ archetype, dimensions[], measures[], filters[], chartSpec?, asyncJob?, savedResultStore? }`. Archetypes A4/A5 need the async job + saved-result store; A2 needs target/commission joins; A6 is a fixed template bound to the GL. All share the common filter contract (date-range, depot, brand, category, measure-toggle) and the Xuất dữ liệu (export) + In báo cáo (print) + column-picker affordances.
 # Reports — Full Catalog (Deep)
 
 Complete route catalog of the Reporting subsystem (Báo cáo) on nhanh.vn, captured live from the nav menu (businessId 137541). ~90 report endpoints across 14 families. Reports are read models projected over the transactional tables (see 14-database-schema.md); they own no canonical state.
