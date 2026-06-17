@@ -85,21 +85,21 @@ sequenceDiagram
     participant FN as Finance
     participant OP as Operator
     Note over MP,SY: Webhook or polling via Tai don
-    MP->>SY: New order event (channel_order_id, items, buyer, status)
+    MP->>SY: New order event with channel_order_id items buyer status
     SY->>SY: Resolve channel and token (refresh if expired)
     SY->>OR: Upsert order via channel_order_map
     Note over OR: sync-state Don san to Chua dong bo
     OR->>IN: Reserve or deduct stock (if stock_sync on)
-    IN-->>OR: Stock updated; push new qty to MP
+    IN-->>OR: Stock updated and push new qty to MP
     OR->>SY: Push stock back to channel
     SY->>MP: Update channel stock
     Note over OR: sync-state Da dong bo
-    OP->>OR: Confirm, print label, handover
-    MP-->>SY: Status callbacks (shipped/delivered/returned/cancelled)
+    OP->>OR: Confirm print label handover
+    MP-->>SY: Status callbacks shipped delivered returned cancelled
     SY->>OR: Mirror lifecycle status
     MP-->>FN: Settlement or payout statement
     FN->>FN: Reconcile (Tien doi soat)
-    FN-->>OR: Mark order reconciled; feed revenue reports
+    FN-->>OR: Mark order reconciled and feed revenue reports
 ```
 
 ### State mapping
@@ -107,7 +107,7 @@ sequenceDiagram
 |---|---|
 | Don san | raw order seen on the channel, not yet imported |
 | Chua dong bo | imported but product/stock not yet matched |
-| Da dong bo | fully mapped; stock deducted; counts toward reports |
+| Da dong bo | fully mapped, stock deducted, counts toward reports |
 
 | Lifecycle tab | Channel equivalent |
 |---|---|
