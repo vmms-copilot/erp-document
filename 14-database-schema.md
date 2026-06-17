@@ -104,3 +104,136 @@ Proposed relational schema reconstructed from observed entities and business log
 - Enforce tenant isolation (business_id) in every query and unique constraints scoped per business (e.g. unique(business_id, product.code)).
 - Stock = sum of movements; keep inventory table as a running balance updated transactionally by orders/bills/imex/transfer/damage.
 - Treat reports as read models over the transactional tables (see 13-reports.md).
+
+
+---
+
+## Appendix A — Concrete Enum & Lookup Values (captured from live modules)
+
+This appendix replaces the placeholder enums above with the actual values observed in the running platform (businessId 137541). Implement each as a lookup table or DB enum.
+
+### order.status (14 values)
+Observed order lifecycle statuses (Vietnamese label -> suggested code):
+- Mới (new)
+- Đang xử lý (processing)
+- Đóng gói (packing)
+- Chờ chuyển (awaiting_handover)
+- Đang giao (shipping)
+- Đã giao (delivered)
+- Đã thu tiền (paid)
+- Hoàn thành (completed)
+- Đổi trả (return_exchange)
+- Hủy (cancelled)
+- Xóa (deleted)
+- Khách hoàn (customer_returned)
+- Hoàn một phần (partial_return)
+- Chờ xác nhận (awaiting_confirmation)
+Packing & complaint stages are TABS within the order list grid, not separate routes.
+
+### order.delivery_method (6 values)
+- Nhân viên giao (own_staff)
+- Hãng vận chuyển (carrier)
+- Khách tự lấy (pickup)
+- Giao tại cửa hàng (in_store)
+- Grab/Ahamove (instant)
+- Khác (other)
+
+### order_payment.payment_type
+- Thanh toán tiền (payment)
+- Thu cước (collect_shipping_fee)
+COD reconciliation grouped by channel tabs (storefront / marketplace / carrier).
+
+### imex_bill.type
+- Nhập (import)
+- Xuất (export)
+
+### imex_bill.movement_kind ("Kiểu" — 14 codes)
+- [G] = bán hàng / xuất bán (sale)
+- [L] = nhập từ nhà cung cấp (supplier_import)
+- [C] = chuyển kho (transfer)
+- [TL] = trả lại nhà cung cấp (supplier_return)
+- [N] = nhập khác (other_import)
+- [B] = xuất hủy/hỏng (write_off)
+- [K] = kiểm kho điều chỉnh (stock_check_adjust)
+- [#] = điều chỉnh tay (manual_adjust)
+- [BH] = bảo hành (warranty)
+- [SC] = sửa chữa (repair)
+- [LKBH] = linh kiện bảo hành (warranty_parts)
+- [TB] = thiết bị (equipment)
+- [TG] = tặng/gift (gift_out)
+- [CB] = cấp bán / xuất nội bộ (internal_issue)
+
+### stock_check.type
+- Theo sản phẩm (by_product)
+- Toàn bộ (full)
+
+### supplier.type
+- Cá nhân (individual)
+- Doanh nghiệp (company)
+
+### customer.type
+- Khách lẻ (retail)
+- Khách sᢁ (wholesale)
+- Đại lý (agent)
+
+### customer_group (observed instances)
+- VIP1 (group id 1009)
+- VIP2 (group id 1010)
+- VIP3 (group id 1011)
+
+### care_activity.type
+- Tặng điểm / Trừ điểm (point_add / point_deduct)
+- Tặng tiền tích lũy / Trừ tiền tích lũy (balance_add / balance_deduct)
+- Gọi điện (call)
+- Nhắn tin (sms)
+
+### invoice.status (e-invoice)
+- Phát hành (issued)
+- Nháp (draft)
+- Hủy phát hành (cancelled)
+- Bị điều chỉnh (adjusted)
+
+### promotion.type
+- Discount programs (v1 / v2 engines)
+- Coupon (prefix/suffix code generation)
+- Gift (V1 / V2 engines)
+
+### warranty_case.status
+Dual-track status: ticket status + product status. Product statuses configured under /warranty/setting/productstatus (status kinds: ticket / product).
+
+### channel.type (connection types observed)
+- Shopee (2 connections)
+- Facebook (7 connections)
+- Lazada / Tiki / TikTok Shop / website storefront
+Sync attributes: sync mode, token expiry, order sync, stock sync, price sync.
+
+### role (RBAC roles observed)
+- Giám đốc (director)
+- Cửa hàng trưởng (store_manager)
+- Nhân viên kho (warehouse_staff)
+- Nhân viên bán hàng (sales_staff)
+- Nhân viên thu ngân (cashier)
+Roles are depot-scoped; 2FA available per user.
+
+### depot (observed instances)
+- PHANH (depotId 140387)
+- PHANH 2
+- PHANH 3
+
+### account — Chart of Accounts
+Full Vietnamese chart per Circular TT200 / TT133 (246 accounts). Key accounts observed in transactions: 11111 (cash on hand), 131 (customer receivables). The complete 246-account chart is documented in modules/accounting-deep.md.
+
+### pos_bill.payment_method
+- Tiền mặt (cash)
+- Chuyển khoản (transfer)
+- Thẻ (card)
+- Khác (other)
+
+### customer / pos gender
+- Nam (male)
+- Nữ (female)
+- Khác (other)
+
+### Notes
+- Legacy POS interface sunsetting 28/02/2026; new POS at /pos/bill/add.
+- Full per-module detail (columns, tabs, API endpoints, formulas) lives in the modules/*-deep.md docs.
